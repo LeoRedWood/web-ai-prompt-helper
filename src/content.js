@@ -31,11 +31,16 @@ function injectStyle() {
 
 function injectTagBar(inputEl) {
   if (tagBar) tagBar.remove();
-  let container = inputEl;
-  for (let i = 0; i < 3; i++) container = container.parentElement;
+  // ponytail: 每个平台可自定义挂载点，默认往上 3 层
+  let anchor = inputEl;
+  if (PLATFORM.mount) {
+    anchor = PLATFORM.mount(inputEl);
+  } else {
+    for (let i = 0; i < 3; i++) anchor = anchor.parentElement;
+  }
   tagBar = document.createElement("div");
   tagBar.className = "pi-bar";
-  container.parentElement.insertBefore(tagBar, container);
+  anchor.parentElement.insertBefore(tagBar, anchor);
   renderTags();
 }
 

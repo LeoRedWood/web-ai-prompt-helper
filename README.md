@@ -9,6 +9,7 @@
 | DeepSeek | chat.deepseek.com |
 | Kimi | www.kimi.com |
 | Qwen (通义千问) | chat.qwen.ai |
+| Doubao (豆包) | www.doubao.com |
 
 ## 安装
 
@@ -79,6 +80,7 @@
 1. 建议在内存充足的情况下使用，或选择体积较小的img文件
 2. 部分代码由AI配合生成，不保证绝对的安全性
 3. 测试平台：win10 chrome
+4. chatgpt, gemini, grok等平台编辑器暂不支持，up懒得做了
 
 ## 鸣谢
 

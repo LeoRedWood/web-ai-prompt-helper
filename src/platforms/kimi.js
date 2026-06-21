@@ -1,4 +1,4 @@
-// Kimi: Lexical — 模拟 Ctrl+A 全选，再粘贴替换
+// Kimi: Lexical — Ctrl+A 全选 + 合成粘贴（已验证可用）
 const PLATFORM = {
     input: '.chat-input-editor',
 

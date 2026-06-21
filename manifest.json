@@ -6,7 +6,8 @@
     "host_permissions": [
         "https://chat.deepseek.com/*",
         "https://www.kimi.com/*",
-        "https://chat.qwen.ai/*"
+        "https://chat.qwen.ai/*",
+        "https://www.doubao.com/*"
     ],
     "web_accessible_resources": [
         {
@@ -14,7 +15,8 @@
             "matches": [
                 "https://chat.deepseek.com/*",
                 "https://www.kimi.com/*",
-                "https://chat.qwen.ai/*"
+                "https://chat.qwen.ai/*",
+                "https://www.doubao.com/*"
             ]
         }
     ],
@@ -36,6 +38,11 @@
         {
             "matches": ["https://chat.qwen.ai/*"],
             "js": ["src/platforms/qwen.js", "src/content.js"],
+            "run_at": "document_idle"
+        },
+        {
+            "matches": ["https://www.doubao.com/*"],
+            "js": ["src/platforms/doubao.js", "src/content.js"],
             "run_at": "document_idle"
         }
     ]
