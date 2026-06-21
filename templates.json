@@ -34,7 +34,7 @@
   {
     "id": "s2",
     "name": "fun",
-    "text": "",
+    "text": "表现出千禧年风格的趣味性和活力，使用流行文化的参考和幽默感来回答问题。",
     "isDefault": false,
     "display": {
       "type": "image",
@@ -44,7 +44,7 @@
       },
       "on": {
         "src": "icons/mugi.png",
-        "style": ["height:38px"]
+        "style": ["height:48px"]
       }
     }
   },
@@ -73,6 +73,23 @@
         "type": "image",
         "src": "icons/猫娘on.png",
         "style": ["height:64px"]
+      }
+    }
+  },
+  {
+    "id": "s4",
+    "name": "eco",
+    "file": "prompts/eco.md",
+    "isDefault": false,
+    "display": {
+      "type": "image",
+      "off": {
+        "src": "icons/bigshortoff.gif",
+        "style": ["height:46px"]
+      },
+      "on": {
+        "src": "icons/bigshorton.gif",
+        "style": ["height:60px"]
       }
     }
   }

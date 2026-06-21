@@ -9,6 +9,12 @@ const PLATFORM = {
     },
     changed(el) { el.dispatchEvent(new InputEvent("input", { bubbles: true })); },
 
+    mount(el) {
+        let c = el;
+        for (let i = 0; i < 9; i++) c = c.parentElement;
+        return c;
+    },
+
     isNewChat() {
         return window.location.pathname === "/chat";
     }

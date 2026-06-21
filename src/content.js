@@ -3,7 +3,6 @@ let cachedTemplates = [];
 let activeTags = new Set();
 
 function waitForInput(timeout = 10000) {
-    
   return new Promise((resolve, reject) => {
     const start = Date.now();
     const timer = setInterval(() => {
@@ -31,7 +30,6 @@ function injectStyle() {
 
 function injectTagBar(inputEl) {
   if (tagBar) tagBar.remove();
-  // ponytail: 每个平台可自定义挂载点，默认往上 3 层
   let anchor = inputEl;
   if (PLATFORM.mount) {
     anchor = PLATFORM.mount(inputEl);
@@ -44,7 +42,6 @@ function injectTagBar(inputEl) {
   renderTags();
 }
 
-// ponytail: 刷新插件后旧 content script 的 chrome API 失效
 function safeURL(path) {
   if (!chrome.runtime?.id) return path;
   return chrome.runtime.getURL(path);
@@ -58,14 +55,13 @@ function renderTags() {
       const d = t.display || {};
       const sc = on ? (d.on || d.off) : (d.off || d.on);
       const st = (sc && sc.type) || d.type;
-      if (st === "image" || t.iconOff || t.iconOn) {
-        let src, imgStyle = "height:24px;display:block;";
-        if (sc) {
-          src = safeURL(typeof sc === "string" ? sc : (sc.src || ""));
-          if (sc.style) imgStyle = toStyle(sc.style);
-        } else {
-          src = on ? (t.iconOn || t.iconOff) : (t.iconOff || t.iconOn);
-        }
+      const isImg = st === "image" || t.iconOff || t.iconOn;
+      if (isImg) {
+        let src = on ? (t._iconOn || t._iconOff) : (t._iconOff || t._iconOn);
+        if (!src && sc) src = safeURL(typeof sc === "string" ? sc : (sc.src || ""));
+        if (!src) src = on ? (t.iconOn || t.iconOff) : (t.iconOff || t.iconOn);
+        let imgStyle = "height:24px;display:block;";
+        if (sc && sc.style) imgStyle = toStyle(sc.style);
         return `<span data-id="${t.id}" class="pi-imgtag" title="${escapeHtml(t.name)}">
           <img src="${src}" style="${imgStyle}">
         </span>`;
@@ -89,7 +85,14 @@ function renderTags() {
   });
 }
 
-// 支持字符串 "a:1;b:2" 或数组 ["a:1","b:2"]
+async function preloadImg(url) {
+  try {
+    const r = await fetch(url);
+    const blob = await r.blob();
+    return URL.createObjectURL(blob);
+  } catch { return ''; }
+}
+
 function toStyle(v) {
   if (!v) return "";
   return Array.isArray(v) ? v.join(";") : v;
@@ -103,7 +106,7 @@ function escapeHtml(str) {
 
 // ===== 输入框实时拼接 =====
 
-let _rebuilding = false; // ponytail: 防止 contenteditable 写入触发 MutationObserver 死循环
+let _rebuilding = false;
 
 function rebuildTextarea() {
   if (_rebuilding) return;
@@ -111,16 +114,15 @@ function rebuildTextarea() {
   if (!inputEl) return;
   _rebuilding = true;
   try {
-    let userText = PLATFORM.read(inputEl) || "";
-    for (const t of cachedTemplates) {
-      userText = userText.replaceAll(t.text, "");
-    }
-    userText = userText.replaceAll("\n\n---\n\n", "").trim();
+    const SEP = "\n\n---\n\n";
+    const full = PLATFORM.read(inputEl) || "";
+    const idx = full.lastIndexOf(SEP);
+    const userText = idx > -1 ? full.slice(idx + SEP.length) : full;
 
     const toInject = cachedTemplates.filter(t => activeTags.has(t.id));
     if (toInject.length > 0) {
       const prefix = toInject.map(t => t.text).join("\n\n");
-      PLATFORM.write(inputEl, prefix + "\n\n---\n\n" + userText);
+      PLATFORM.write(inputEl, prefix + SEP + userText);
     } else {
       PLATFORM.write(inputEl, userText);
     }
@@ -133,7 +135,6 @@ function rebuildTextarea() {
 // hotkey: Alt + num
 
 document.addEventListener("keydown", (e) => {
-
   if (!e.altKey || e.ctrlKey) return;
   const n = +e.key;
   if (isNaN(n) || n < 1 || n > 10) return;
@@ -148,8 +149,6 @@ document.addEventListener("keydown", (e) => {
 
 // ===== DOM 变化：SPA 切路由后重新挂标签行 =====
 
-// ponytail: observer 只负责恢复标签栏 UI，绝不碰输入框文字
-// 文字只由三处写入：启动、点击标签、快捷键
 let _reinjectTimer = null;
 
 function tryReinject() {
@@ -176,7 +175,7 @@ new MutationObserver(() => tryReinject()).observe(document.body, {
 
 (async () => {
   try {
-    if (!chrome.runtime?.id) return; // 旧 content script，扩展已刷新
+    if (!chrome.runtime?.id) return;
     injectStyle();
     const resp = await fetch(safeURL("templates.json"));
     cachedTemplates = await resp.json();
@@ -186,6 +185,22 @@ new MutationObserver(() => tryReinject()).observe(document.body, {
         t.text = await tr.text();
       }
     }
+    // 图标预转 data URL
+    for (const t of cachedTemplates) {
+      if (t.display?.type === "image") {
+        const offCfg = t.display.off || t.display.on;
+        const onCfg = t.display.on || t.display.off;
+        if (offCfg) t._iconOff = await preloadImg(safeURL(typeof offCfg === "string" ? offCfg : offCfg.src));
+        if (onCfg) t._iconOn = await preloadImg(safeURL(typeof onCfg === "string" ? onCfg : onCfg.src));
+      } else if (t.display?.off?.type === "image") {
+        const oc = t.display.off;
+        if (oc.src) t._iconOff = await preloadImg(safeURL(oc.src));
+      } else if (t.display?.on?.type === "image") {
+        const oc = t.display.on;
+        if (oc.src) t._iconOn = await preloadImg(safeURL(oc.src));
+      }
+    }
+
     cachedTemplates.forEach(t => { if (t.isDefault) activeTags.add(t.id); });
     const inputEl = await waitForInput();
     injectTagBar(inputEl);
