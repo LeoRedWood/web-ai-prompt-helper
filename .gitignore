@@ -1,4 +1,4 @@
 CLAUDE.md
 .claude/
-prompts/
+prompts/*.md
 .playwright-cli/

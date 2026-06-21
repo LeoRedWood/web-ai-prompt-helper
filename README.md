@@ -16,6 +16,10 @@
 2. 打开 `chrome://extensions/`，开启「开发者模式」
 3. 点击「加载已解压的扩展程序」，选择项目根目录
 
+./prompts下放prompts，并在templates.json中的file字段指定。
+
+或者直接在templates.json的text字段填写较短的提示词。
+
 ## 美化配置
 
 编辑 `templates.json`，每个模板可配置：
