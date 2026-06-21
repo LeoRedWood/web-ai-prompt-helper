@@ -3,11 +3,19 @@
     "name": "web-ai-prompt-helper",
     "version": "0.1",
     "description": "An extension for web ai prompt enhancement",
-    "host_permissions": ["https://chat.deepseek.com/*"],
+    "host_permissions": [
+        "https://chat.deepseek.com/*",
+        "https://www.kimi.com/*",
+        "https://chat.qwen.ai/*"
+    ],
     "web_accessible_resources": [
         {
             "resources": ["templates.json", "icons/*", "prompts/*"],
-            "matches": ["https://chat.deepseek.com/*"]
+            "matches": [
+                "https://chat.deepseek.com/*",
+                "https://www.kimi.com/*",
+                "https://chat.qwen.ai/*"
+            ]
         }
     ],
     "action": {
@@ -18,6 +26,16 @@
         {
             "matches": ["https://chat.deepseek.com/*"],
             "js": ["src/platforms/deepseek.js", "src/content.js"],
+            "run_at": "document_idle"
+        },
+        {
+            "matches": ["https://www.kimi.com/*"],
+            "js": ["src/platforms/kimi.js", "src/content.js"],
+            "run_at": "document_idle"
+        },
+        {
+            "matches": ["https://chat.qwen.ai/*"],
+            "js": ["src/platforms/qwen.js", "src/content.js"],
             "run_at": "document_idle"
         }
     ]

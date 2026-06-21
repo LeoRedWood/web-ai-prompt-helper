@@ -39,28 +39,39 @@ function injectTagBar(inputEl) {
   renderTags();
 }
 
+// ponytail: 刷新插件后旧 content script 的 chrome API 失效
+function safeURL(path) {
+  if (!chrome.runtime?.id) return path;
+  return chrome.runtime.getURL(path);
+}
+
 function renderTags() {
   if (cachedTemplates.length === 0) { tagBar.innerHTML = ""; return; }
-  tagBar.innerHTML = cachedTemplates.map((t, i) => {
-    const on = activeTags.has(t.id);
-    const d = t.display || {};
-    const sc = on ? (d.on || d.off) : (d.off || d.on);
-    const st = (sc && sc.type) || d.type;
-    if (st === "image" || t.iconOff || t.iconOn) {
-      let src, imgStyle = "height:24px;display:block;";
-      if (sc) {
-        src = chrome.runtime.getURL(typeof sc === "string" ? sc : sc.src);
-        if (sc.style) imgStyle = toStyle(sc.style);
-      } else {
-        src = on ? (t.iconOn || t.iconOff) : (t.iconOff || t.iconOn);
+  try {
+    tagBar.innerHTML = cachedTemplates.map((t, i) => {
+      const on = activeTags.has(t.id);
+      const d = t.display || {};
+      const sc = on ? (d.on || d.off) : (d.off || d.on);
+      const st = (sc && sc.type) || d.type;
+      if (st === "image" || t.iconOff || t.iconOn) {
+        let src, imgStyle = "height:24px;display:block;";
+        if (sc) {
+          src = safeURL(typeof sc === "string" ? sc : (sc.src || ""));
+          if (sc.style) imgStyle = toStyle(sc.style);
+        } else {
+          src = on ? (t.iconOn || t.iconOff) : (t.iconOff || t.iconOn);
+        }
+        return `<span data-id="${t.id}" class="pi-imgtag" title="${escapeHtml(t.name)}">
+          <img src="${src}" style="${imgStyle}">
+        </span>`;
       }
-      return `<span data-id="${t.id}" class="pi-imgtag" title="${escapeHtml(t.name)}">
-        <img src="${src}" style="${imgStyle}">
-      </span>`;
-    }
-    const s = sc ? toStyle(sc.style) : toStyle(on ? d.onStyle : d.style);
-    return `<span data-id="${t.id}" style="${s}">${escapeHtml(t.name)}</span>`;
-  }).join("");
+      const s = sc ? toStyle(sc.style) : toStyle(on ? d.onStyle : d.style);
+      return `<span data-id="${t.id}" style="${s}">${escapeHtml(t.name)}</span>`;
+    }).join("");
+  } catch (e) {
+    console.log("[renderTags]", e.message);
+    return;
+  }
 
   tagBar.querySelectorAll("[data-id]").forEach(tag => {
     tag.addEventListener("click", e => {
@@ -87,26 +98,31 @@ function escapeHtml(str) {
 
 // ===== 输入框实时拼接 =====
 
+let _rebuilding = false; // ponytail: 防止 contenteditable 写入触发 MutationObserver 死循环
+
 function rebuildTextarea() {
+  if (_rebuilding) return;
   const inputEl = document.querySelector(PLATFORM.input);
   if (!inputEl) return;
+  _rebuilding = true;
+  try {
+    let userText = PLATFORM.read(inputEl) || "";
+    for (const t of cachedTemplates) {
+      userText = userText.replaceAll(t.text, "");
+    }
+    userText = userText.replaceAll("\n\n---\n\n", "").trim();
 
-  // 拿到用户手打的文字（去掉之前注入的模板文本和分隔符）
-  let userText = inputEl.value || "";
-  for (const t of cachedTemplates) {
-    userText = userText.replace(t.text, "");
+    const toInject = cachedTemplates.filter(t => activeTags.has(t.id));
+    if (toInject.length > 0) {
+      const prefix = toInject.map(t => t.text).join("\n\n");
+      PLATFORM.write(inputEl, prefix + "\n\n---\n\n" + userText);
+    } else {
+      PLATFORM.write(inputEl, userText);
+    }
+    PLATFORM.changed(inputEl);
+  } finally {
+    _rebuilding = false;
   }
-  userText = userText.replace(/\n\n---\n\n/g, "").trim();
-
-  // 拼上当前激活的模板
-  const toInject = cachedTemplates.filter(t => activeTags.has(t.id));
-  if (toInject.length > 0) {
-    const prefix = toInject.map(t => t.text).join("\n\n");
-    inputEl.value = prefix + "\n\n---\n\n" + userText;
-  } else {
-    inputEl.value = userText;
-  }
-  inputEl.dispatchEvent(new Event("input", { bubbles: true }));
 }
 
 // hotkey: Alt + num
@@ -127,17 +143,24 @@ document.addEventListener("keydown", (e) => {
 
 // ===== DOM 变化：SPA 切路由后重新挂标签行 =====
 
+// ponytail: observer 只负责恢复标签栏 UI，绝不碰输入框文字
+// 文字只由三处写入：启动、点击标签、快捷键
+let _reinjectTimer = null;
+
 function tryReinject() {
   if (tagBar && tagBar.isConnected) return;
-  // 新对话第一条发完，默认标签灭掉
-  if (!PLATFORM.isNewChat()) {
-    activeTags.clear();
-  }
-  const inputEl = document.querySelector(PLATFORM.input);
-  if (inputEl) {
-    injectTagBar(inputEl);
-    rebuildTextarea();
-  }
+  if (_reinjectTimer) return;
+  _reinjectTimer = setTimeout(() => {
+    _reinjectTimer = null;
+    if (tagBar && tagBar.isConnected) return;
+    if (!PLATFORM.isNewChat()) {
+      activeTags.clear();
+    }
+    const inputEl = document.querySelector(PLATFORM.input);
+    if (inputEl) {
+      injectTagBar(inputEl);
+    }
+  }, 200);
 }
 
 new MutationObserver(() => tryReinject()).observe(document.body, {
@@ -148,13 +171,13 @@ new MutationObserver(() => tryReinject()).observe(document.body, {
 
 (async () => {
   try {
+    if (!chrome.runtime?.id) return; // 旧 content script，扩展已刷新
     injectStyle();
-    const resp = await fetch(chrome.runtime.getURL("templates.json"));
+    const resp = await fetch(safeURL("templates.json"));
     cachedTemplates = await resp.json();
-    // 解析 file 引用
     for (const t of cachedTemplates) {
       if (t.file) {
-        const tr = await fetch(chrome.runtime.getURL(t.file));
+        const tr = await fetch(safeURL(t.file));
         t.text = await tr.text();
       }
     }
