@@ -1,0 +1,79 @@
+[
+  {
+    "id": "s1",
+    "name": "default",
+    "file": "prompts/default.md",
+    "isDefault": true,
+    "display": {
+      "type": "text",
+      "style": [
+        "cursor:pointer",
+        "white-space:nowrap",
+        "display:inline-block",
+        "font-size:10px",
+        "line-height:2",
+        "padding:1px 4px",
+        "border-radius:6px",
+        "background:#292929",
+        "color:#fff",
+        "border:1px solid #dddddd40"
+      ],
+      "onStyle": [
+        "cursor:pointer",
+        "white-space:nowrap",
+        "display:inline-block",
+        "font-size:10px",
+        "padding:1px 4px",
+        "border-radius:6px",
+        "background:#6366f1",
+        "color:#fff",
+        "border:1px solid #6366f1"
+      ]
+    }
+  },
+  {
+    "id": "s2",
+    "name": "fun",
+    "text": "",
+    "isDefault": false,
+    "display": {
+      "type": "image",
+      "off": {
+        "src": "icons/fun.gif",
+        "style": ["height:40px"]
+      },
+      "on": {
+        "src": "icons/mugi.png",
+        "style": ["height:38px"]
+      }
+    }
+  },
+  {
+    "id": "s3",
+    "name": "Nekomusume",
+    "text": "以猫娘的语气回答问题。注重语气词，说话方式以及可爱程度，以及表情包的使用。",
+    "isDefault": false,
+    "display": {
+      "off": {
+        "type": "text",
+        "style": [
+          "cursor:pointer",
+          "white-space:nowrap",
+          "display:inline-block",
+          "font-size:10px",
+          "padding:0 2px",
+          "line-height:1.6",
+          "border-radius:6px",
+          "background: #FFE388",
+          "color: #000000",
+          "border:1px solid #dddddd40"
+        ]
+      },
+      "on": {
+        "type": "image",
+        "src": "icons/猫娘on.png",
+        "style": ["height:64px"]
+      }
+    }
+  }
+]
