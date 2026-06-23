@@ -52,7 +52,7 @@
     "id": "s3",
     "name": "Nekomusume",
     "text": "以猫娘的语气回答问题。注重语气词，说话方式以及可爱程度，以及表情包的使用。",
-    "isDefault": false,
+    "isDefault": true,
     "display": {
       "off": {
         "type": "text",
@@ -89,6 +89,23 @@
       },
       "on": {
         "src": "icons/bigshorton.gif",
+        "style": ["height:72px"]
+      }
+    }
+  },
+  {
+    "id": "s5",
+    "name": "knowledge",
+    "file": "prompts/knowledge.md",
+    "isDefault": false,
+    "display": {
+      "type": "image",
+      "off": {
+        "src": "icons/wojack_cigar.png",
+        "style": ["height:46px"]
+      },
+      "on": {
+        "src": "icons/book.gif",
         "style": ["height:60px"]
       }
     }
